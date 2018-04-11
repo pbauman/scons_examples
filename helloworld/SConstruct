@@ -1,0 +1,27 @@
+import os
+import sys
+
+AddOption('--debugging', nargs=1, type='string', help='--debugging=yes enables debugging mode.', default = 'no')
+
+# Bring in shell variables
+my_env = DefaultEnvironment( ENV = os.environ )
+
+# Setup compilation flags
+if GetOption('debugging') == 'yes':
+    cxxflags = '-g -O0 -Wall'
+else:
+    cxxflags = '-O3 -Wall'
+
+
+# Need to point CPP at our headers too
+cppflags = ['-I.']
+
+# Setup Environment with all build options
+my_env = my_env.Clone(CXXFLAGS = cxxflags,
+                      CPPFLAGS = cppflags )
+
+# Add source files
+sourcefiles = Glob('#/*.C')
+
+# Build program
+my_env.Program( '#/myprog', sourcefiles )
