@@ -1,0 +1,60 @@
+import os
+import sys
+
+AddOption('--debugging', nargs=1, type='string', help='--debugging=yes enables debugging mode.', default = 'no')
+
+AddOption('--with-gsl', dest='gsl', nargs=1, type='string', \
+          help='Specify the location of GSL library.', \
+          default = os.environ.get("GSL_DIR"))
+
+AddOption('--with-compiler', dest='compiler', nargs=1, type='string', \
+          help='Specify compiler. Can be gcc or intel', \
+          default = 'intel')
+
+# Bring in shell variables
+my_env = DefaultEnvironment( ENV = os.environ )
+
+# Build up Environment for Intel
+compiler = GetOption('compiler')
+
+if( compiler == 'intel' ):
+    my_env = my_env.Clone( tools = [ 'intelc'] )
+elif( compiler == 'gcc'):
+    my_env = my_env.Clone( tools = [ 'gcc' ] )
+else:
+    print "Error: Compiler must be gcc or intel"
+    sys.exit(1)
+
+# Gather GSL information
+gsl_dir = GetOption('gsl')
+gsl_include_dir = gsl_dir+'/include'
+gsl_lib_dir = gsl_dir+'/lib'
+
+gsl_includes = '-I'+gsl_include_dir
+gsl_libs = [ 'gsl', 'gslcblas' ]
+
+cppflags = [ gsl_includes ]
+libs = gsl_libs
+libpath = [ gsl_lib_dir ]
+
+# Setup compilation flags
+if GetOption('debugging') == 'yes':
+    ccflags = '-g -O0 -Wall'
+else:
+    ccflags = '-O3 -Wall'
+
+
+# Need to point CPP at our headers too
+cppflags += ['-I.']
+
+# Setup Environment with all build options
+my_env = my_env.Clone(CCFLAGS = ccflags,
+                      CPPFLAGS = cppflags, \
+                      LIBS = libs, \
+                      LIBPATH = libpath )
+
+# Add source files
+cfiles = Glob('#/*.c')
+
+# Build program
+my_env.Program( '#/myprog', cfiles )
